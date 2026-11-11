@@ -1,0 +1,31 @@
+name: Sync LibreTV sources
+
+on:
+  schedule:
+    - cron: '17 21 * * *' # 北京时间每天 05:17
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-libretv-sources
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Convert upstream sources
+        run: node sync.mjs
+      - name: Commit updated sources
+        run: |
+          git add -- sources.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -m 'Sync LibreTV sources'
+          git push
